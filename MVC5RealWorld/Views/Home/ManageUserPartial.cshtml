@@ -1,0 +1,172 @@
+﻿
+@model MVC5RealWorld.Models.ViewModel.UserDataView
+
+<div>
+    <h1>List of Users</h1>
+    <span class="alert-success">@ViewBag.Message</span>
+    <table class="table table-striped table-condensed table-hover">
+        <thread>
+            <tr>
+                <th>ID</th>
+                <th>Login ID</th>
+                <th>Password</th>
+                <th>First Name</th>
+                <th>Last Name</th>
+                <th>Gender</th>
+                <th colspan="2">Role</th>
+                <th></th>
+                <th></th>
+            </tr>
+        </thread>
+        <tbody>
+            @foreach (var i in Model.UserProfile)
+            {
+                <tr>
+                    <td> @Html.DisplayFor(m => i.SYSUserID)</td>
+                    <td> @Html.DisplayFor(m => i.LoginName)</td>
+                    <td> @Html.DisplayFor(m => i.Password)</td>
+                    <td> @Html.DisplayFor(m => i.FirstName)</td>
+                    <td> @Html.DisplayFor(m => i.LastName)</td>
+                    <td> @Html.DisplayFor(m => i.Gender)</td>
+                    <td> @Html.DisplayFor(m => i.RoleName)</td>
+                    <td> @Html.HiddenFor(m => i.LOOKUPRoleID)</td>
+                    <td><a href="javascript:void(0)" class="lnkEdit">Edit</a></td>
+                    <td><a href="javascript:void(0)" class="lnkDelete">Delete</a></td>
+
+
+                </tr>
+            }
+        </tbody>
+    </table>
+
+
+
+    <div id="divEdit" style="display:none">
+        <input type="hidden" id="hidID" />
+        <table>
+            <tr>
+                <td>Login Name</td>
+                <td>
+                    <input type="text" id="txtLoginName" class="form-control" />
+                </td>
+            </tr>
+            <tr>
+                <td>Password</td>
+                <td>
+                    <input type="text" id="txtPassword" class="form-control" />
+                </td>
+            </tr>
+            <tr>
+                <td>First Name</td>
+                <td>
+                    <input type="text" id="txtFirstName" class="form-control" />
+                </td>
+            </tr>
+            <tr>
+                <td>Last Name</td>
+                <td>
+                    <input type="text" id="txtLastName" class="form-control" />
+                </td>
+            </tr>
+            <tr>
+                <td>Gender</td>
+                <td>
+                    @Html.DropDownListFor(o => o.UserGender.SelectedGender,
+                       new SelectList(Model.UserGender.Gender, "Value", "Text"),
+                       "",
+                       new { id = "ddlGender", @class="form-control" })
+                </td>
+            </tr>
+            <tr>
+                <td>Role</td>
+                <td>
+                    @Html.DropDownListFor(o => o.UserRoles.SelectedRoleID,
+                       new SelectList(Model.UserRoles.UserRoleList, "LOOKUPRoleID", "RoleName"),
+                       "",
+                       new { id = "ddlRoles", @class="form-control" })
+                </td>
+            </tr>
+
+        </table>
+
+    </div>
+
+</div>
+
+<script type="text/javascript">
+    $(function(){
+        //the initDialog initializes the jQueryUI dialog by customizing the dialog.
+        //we  customized it by adding our own Save and Cancel buttons for us to write custom code implementation
+        //for each event.
+        //In the save function we extracted each value from the edit form and passed these values to the UpdateUser() JavaScript function
+         var initDialog = function (type) {
+            var title = type;
+            $("#divEdit").dialog({
+                autoOpen: false,
+                modal: true,
+                title: type + ' User',
+                width: 360,
+                buttons: {
+                    Save: function () {
+                        var id = $("#hidID").val();
+                        var role = $("#ddlRoles").val();
+                        var loginName = $("#txtLoginName").val();
+                        var loginPass = $("#txtPassword").val();
+                        var fName = $("#txtFirstName").val();
+                        var lName = $("#txtLastName").val();
+                        var gender = $("#ddlGender").val();
+
+                        UpdateUser(id, loginName, loginPass, fName, lName, gender, role);
+                        $(this).dialog("destroy");
+                    },
+                    Cancel: function () { $(this).dialog("destroy"); }
+                }
+            });
+        }
+
+    //updateUser function issues an AJAXrequest using jQuery AJAX.
+    //The "type" parameter indicates what form method the request requires (POST in this case)
+    //"url" is the path to the controller's method that we have created earlier
+    //The value of url can be a web service, web API, or anything that host our data
+    //"data" is where we assign values to the method that requires parameter.
+    //if the method in the server doesn't require any parameter then we can leave this as empty "{}"
+
+    //"success" function is usually sued when we do a certain process if the request from the server succeeds.
+    //In this case, we load the PartialView to reflect the changes on the view after we update the data.
+    //Note: we are passing a new parameter to the "ManageUserPartial" action that indicates the status of the request
+
+    //The last function is where we open the dialog when the user clicks on the "edit" link from the grid.
+    //This is also where we extract the data from the grid using jQuery selectors and populate the dialog
+    //fields with the extracted data
+    function UpdateUser(id, logName, logPass, fName, lName, gender, role) {
+            $.ajax({
+                type: "POST",
+                url: "@(Url.Action("UpdateUserData","Home"))",
+                data: { userID: id, loginName: logName, password: logPass, firstName: fName, lastName: lName, gender: gender, roleID: role },
+                success: function (data) {
+                    $("#divUserListContainer").load("@(Url.Action("ManageUserPartial","Home", new { status ="update" }))");
+                },
+                error: function (error) {
+                    //to do:
+                }
+            });
+        }
+
+        $("a.lnkEdit").on("click", function () {
+            initDialog("Edit");
+            $(".alert-success").empty();
+            var row = $(this).closest('tr');
+
+            $("#hidID").val(row.find("td:eq(0)").html().trim());
+            $("#txtLoginName").val(row.find("td:eq(1)").html().trim())
+            $("#txtPassword").val(row.find("td:eq(2)").html().trim())
+            $("#txtFirstName").val(row.find("td:eq(3)").html().trim())
+            $("#txtLastName").val(row.find("td:eq(4)").html().trim())
+            $("#ddlGender").val(row.find("td:eq(5)").html().trim())
+            $("#ddlRoles").val(row.find("td:eq(7) > input").val().trim());
+
+            $("#divEdit").dialog("open");
+            return false;
+        });
+    }); 
+</script>
